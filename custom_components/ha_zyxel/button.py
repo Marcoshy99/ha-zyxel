@@ -23,9 +23,9 @@ async def async_setup_entry(
 class ZyxelRebootButton(ButtonEntity):
     """Representation of a Zyxel reboot button."""
 
-    def __init__(self, entry: ConfigEntry, router) -> None:
+    def __init__(self, entry: ConfigEntry, state) -> None:
         """Initialize the button."""
-        self._router = router
+        self._state = state
         self._attr_unique_id = f"{entry.entry_id}_reboot"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
