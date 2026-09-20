@@ -1,12 +1,12 @@
 {
   "domain": "ha_zyxel",
   "name": "Zyxel",
-  "codeowners": ["@zulufoxtrot", "@HennieLP", "@martijnmelchers", "@Igglybuff"],
+  "codeowners": ["@Marcoshy99"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/zulufoxtrot/ha-zyxel",
+  "documentation": "https://github.com/Marcoshy99/ha-zyxel",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/zulufoxtrot/ha-zyxel/issues",
+  "issue_tracker": "https://github.com/Marcoshy99/ha-zyxel/issues",
   "requirements": [
     "nr7101@git+https://github.com/zulufoxtrot/nr7101.git@v2.0.2"
   ],

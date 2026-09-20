@@ -16,16 +16,16 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up the Zyxel buttons."""
-    router = hass.data[DOMAIN][entry.entry_id]["router"]
-    async_add_entities([ZyxelRebootButton(entry, router)])
+    state = hass.data[DOMAIN][entry.entry_id]["state"]
+    async_add_entities([ZyxelRebootButton(entry, state)])
 
 
 class ZyxelRebootButton(ButtonEntity):
     """Representation of a Zyxel reboot button."""
 
-    def __init__(self, entry: ConfigEntry, router) -> None:
+    def __init__(self, entry: ConfigEntry, state) -> None:
         """Initialize the button."""
-        self._router = router
+        self._state = state
         self._attr_unique_id = f"{entry.entry_id}_reboot"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -40,7 +40,7 @@ class ZyxelRebootButton(ButtonEntity):
         """Handle the button press."""
         _LOGGER.info("Attempting to reboot Zyxel device")
         try:
-            await self.hass.async_add_executor_job(self._router.reboot)
+            await self.hass.async_add_executor_job(self._state["router"].reboot)
             _LOGGER.info("Zyxel device reboot command sent successfully")
         except Exception as err:
             _LOGGER.error("Failed to send reboot command: %s", err)
