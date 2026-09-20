@@ -9,6 +9,8 @@ from nr7101 import nr7101
 
 _LOGGER = logging.getLogger(__name__)
 
+REQUEST_TIMEOUT = 15
+
 _ENDPOINTS = (
     ("cellwan_status", "cellular"),
     ("Traffic_Status", "traffic"),
@@ -30,14 +32,8 @@ class ZyxelConnectionError(Exception):
 
 
 def create_router(host: str, username: str, password: str) -> Any:
-    """Create a router with connection state isolated from other instances.
-
-    nr7101 currently uses a mutable dictionary as its default ``params``
-    argument. Passing a new dictionary explicitly prevents cookies from a
-    config-flow instance being reused by the config-entry instance, where
-    they would be paired with a different AES key.
-    """
-    return nr7101.NR7101(host, username, password, {})
+    """Create an nr7101 client with isolated session state and bounded requests."""
+    return nr7101.NR7101(host, username, password, {"timeout": REQUEST_TIMEOUT})
 
 
 def authenticate(router: Any) -> None:
@@ -46,7 +42,6 @@ def authenticate(router: Any) -> None:
         login_success = router.login()
     except Exception as err:
         raise ZyxelConnectionError("Unable to complete router login") from err
-
     if not login_success or not getattr(router, "sessionkey", None):
         raise ZyxelAuthenticationError("The router rejected the credentials")
 
@@ -55,7 +50,6 @@ def _parse_traffic_object(obj: dict[str, Any] | None) -> dict[str, Any]:
     """Convert Traffic_Status interface arrays to a keyed dictionary."""
     if not obj or "ipIface" not in obj or "ipIfaceSt" not in obj:
         return {}
-
     return {
         interface["X_ZYXEL_IfName"]: status
         for interface, status in zip(obj["ipIface"], obj["ipIfaceSt"])
@@ -63,13 +57,10 @@ def _parse_traffic_object(obj: dict[str, Any] | None) -> dict[str, Any]:
     }
 
 
-def _fetch_available_endpoints(
-    router: Any,
-) -> tuple[dict[str, Any], Exception | None]:
+def _fetch_available_endpoints(router: Any) -> tuple[dict[str, Any], Exception | None]:
     """Fetch every supported endpoint once without an unbounded retry loop."""
     result: dict[str, Any] = {}
     last_error: Exception | None = None
-
     for endpoint, key in _ENDPOINTS:
         try:
             data = router.get_json_object(endpoint)
@@ -77,16 +68,11 @@ def _fetch_available_endpoints(
                 data = _parse_traffic_object(data)
             if data:
                 result[key] = data
-        except Exception as err:  # Different firmware exposes different endpoints.
+        except Exception as err:
             last_error = err
             _LOGGER.debug("Zyxel endpoint %s is unavailable: %s", endpoint, err)
-
-            # Invalid UTF-8 after AES decryption means the cookie/session and
-            # AES key no longer match. Continuing would emit the same error for
-            # every endpoint, so reauthenticate immediately.
             if "Failed to process decrypted response" in str(err):
                 break
-
     return result, last_error
 
 
@@ -94,17 +80,12 @@ def fetch_status(router: Any) -> dict[str, Any]:
     """Return available router data, reauthenticating once when necessary."""
     if not getattr(router, "sessionkey", None):
         authenticate(router)
-
     last_error: Exception | None = None
     for attempt in range(2):
         result, last_error = _fetch_available_endpoints(router)
         if result:
             return result
-
         if attempt == 0:
             router.sessionkey = None
             authenticate(router)
-
-    raise ZyxelConnectionError(
-        "The router returned no supported status data"
-    ) from last_error
+    raise ZyxelConnectionError("The router returned no supported status data") from last_error
