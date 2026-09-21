@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from custom_components.ha_zyxel.const import DOMAIN
-from custom_components.ha_zyxel.helpers import lan_hosts
+from custom_components.ha_zyxel.helpers import lan_host_name, lan_hosts
 
 
 async def async_setup_entry(
@@ -49,7 +49,7 @@ class ZyxelConnectivitySensor(CoordinatorEntity, BinarySensorEntity):
         self.mac = mac
         self._attr_unique_id = f"{entry.entry_id}_{mac}_connectivity"
         host = lan_hosts(coordinator).get(mac, {})
-        friendly = host.get("curHostName") or host.get("HostName") or mac
+        friendly = lan_host_name(host, mac)
         self._attr_device_info = DeviceInfo(
             connections={(CONNECTION_NETWORK_MAC, mac)},
             default_name=friendly,
