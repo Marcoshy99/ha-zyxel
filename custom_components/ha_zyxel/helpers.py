@@ -15,3 +15,12 @@ def lan_hosts(coordinator) -> dict[str, dict]:
             if mac:
                 result[format_mac(mac)] = host
     return result
+
+
+def lan_host_name(host: dict, mac: str) -> str:
+    """Return a useful display name for a LAN host, falling back to its MAC."""
+    for key in ("curHostName", "HostName", "DeviceName"):
+        value = host.get(key)
+        if isinstance(value, str) and value.strip() and value.strip().lower() != "unknown":
+            return value.strip()
+    return mac
