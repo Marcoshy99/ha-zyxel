@@ -15,7 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from custom_components.ha_zyxel.const import (
     CONF_CONSIDER_HOME, CONF_TRACK_ALL, DEFAULT_CONSIDER_HOME, DEFAULT_TRACK_ALL, DOMAIN,
 )
-from custom_components.ha_zyxel.helpers import lan_hosts
+from custom_components.ha_zyxel.helpers import lan_host_name, lan_hosts
 
 
 async def async_setup_entry(
@@ -79,7 +79,7 @@ class ZyxelDeviceTracker(CoordinatorEntity, ScannerEntity):
 
     def _friendly_name(self) -> str:
         host = self._host
-        return host.get("curHostName") or host.get("HostName") or host.get("DeviceName") or self._mac
+        return lan_host_name(host, self._mac)
 
     def _update_last_seen(self) -> None:
         if self._host.get("Active"):
