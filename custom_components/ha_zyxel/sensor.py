@@ -18,7 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from custom_components.ha_zyxel.const import DOMAIN
-from custom_components.ha_zyxel.helpers import lan_hosts
+from custom_components.ha_zyxel.helpers import lan_host_name, lan_hosts
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -340,7 +340,7 @@ class _ZyxelClientSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._mac = mac
         host = lan_hosts(coordinator).get(mac, {})
-        friendly = host.get("curHostName") or host.get("HostName") or mac
+        friendly = lan_host_name(host, mac)
         self._attr_device_info = DeviceInfo(
             connections={(CONNECTION_NETWORK_MAC, mac)},
             default_name=friendly,
